@@ -87,8 +87,9 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	exit := 0
 	select {
-	case <-c:
+	case v := <-c:
 		exit = 1
+		log.Printf("gor got signal %s, exit!\n", v)
 	case <-closeCh:
 		exit = 0
 	}

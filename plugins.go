@@ -123,6 +123,9 @@ func NewPlugins() *InOutPlugins {
 		plugins.registerPlugin(NewFileInput, options, Settings.InputFileLoop)
 	}
 
+	for _, path := range Settings.OutputRest {
+		plugins.registerPlugin(NewRestOutput, path)
+	}
 	for _, path := range Settings.OutputFile {
 		if strings.HasPrefix(path, "s3://") {
 			plugins.registerPlugin(NewS3Output, path, &Settings.OutputFileConfig)

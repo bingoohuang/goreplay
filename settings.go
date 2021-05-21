@@ -47,6 +47,7 @@ type AppSettings struct {
 
 	InputFile        MultiOption `json:"input-file"`
 	InputFileLoop    bool        `json:"input-file-loop"`
+	OutputRest       MultiOption `json:"output-rest"`
 	OutputFile       MultiOption `json:"output-file"`
 	OutputFileConfig FileOutputConfig
 
@@ -114,6 +115,7 @@ func init() {
 	flag.Var(&Settings.InputFile, "input-file", "Read requests from file: \n\tgor --input-file ./requests.gor --output-http staging.com")
 	flag.BoolVar(&Settings.InputFileLoop, "input-file-loop", false, "Loop input files, useful for performance testing.")
 
+	flag.Var(&Settings.OutputRest, "output-rest", "Write incoming requests to .rest or .http file: \n\tgor --input-raw :80 --output-rest ./requests.rest")
 	flag.Var(&Settings.OutputFile, "output-file", "Write incoming requests to file: \n\tgor --input-raw :80 --output-file ./requests.gor")
 	flag.DurationVar(&Settings.OutputFileConfig.FlushInterval, "output-file-flush-interval", time.Second, "Interval for forcing buffer flush to the file, default: 1s.")
 	flag.BoolVar(&Settings.OutputFileConfig.Append, "output-file-append", false, "The flushed chunk is appended to existence file or not. ")
