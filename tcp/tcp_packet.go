@@ -27,7 +27,7 @@ var packetPool = sync.Pool{
 /*
 Packet represent data and layers of packet.
 parser extracts information from pcap Packet. functions of *Packet doesn't validate if packet is nil,
-calllers must make sure that ParsePacket has'nt returned any error before calling any other
+callers must make sure that ParsePacket hasn't returned any error before calling any other
 function.
 */
 type Packet struct {
