@@ -297,6 +297,12 @@ func (c *HTTPClient) Send(data []byte) ([]byte, error) {
 		return nil, nil
 	}
 
+	// avoid replay
+	if req.Header.Get("X-Goreplay-Output") == "1" {
+		return nil, nil
+	}
+	req.Header.Set("X-Goreplay-Output", "1")
+
 	if !c.config.OriginalHost {
 		req.Host = c.config.url.Host
 	}

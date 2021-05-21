@@ -41,6 +41,7 @@ type Packet struct {
 	Retry              int
 	Timestamp          time.Time
 	Payload            []byte
+	Key                string
 }
 
 // ParsePacket parse raw packets

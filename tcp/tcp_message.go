@@ -3,7 +3,6 @@ package tcp
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"sort"
 	"time"
 
@@ -30,6 +29,8 @@ type Message struct {
 	parser   *MessageParser
 	feedback interface{}
 	Stats
+
+	Key string
 }
 
 // UUID returns the UUID of a TCP request and its response.
@@ -297,6 +298,7 @@ func (parser *MessageParser) addPacket(m *Message, pckt *Packet) {
 }
 
 func (parser *MessageParser) Emit(m *Message) {
+	m.Key = m.packets[0].Key
 	delete(parser.m, m.packets[0].MessageID())
 	parser.emit(m)
 }

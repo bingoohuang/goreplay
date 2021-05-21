@@ -328,6 +328,7 @@ func (l *Listener) read(handler PacketHandler) {
 					if err == nil {
 						pckt, err := tcp.ParsePacket(data, linkType, linkSize, &ci)
 						if err == nil {
+							pckt.Key = key
 							handler(pckt)
 						}
 						continue
@@ -440,30 +441,38 @@ func (l *Listener) setInterfaces() (err error) {
 	if err != nil {
 		return
 	}
-	for i := range ifis {
-		if ifis[i].Flags&net.FlagLoopback != 0 {
-			l.loopIndex = ifis[i].Index
+
+	ifacesHasAddr := make([]net.Interface, 0, len(ifis))
+
+	for _, ifi := range ifis {
+		if ifi.Flags&net.FlagLoopback != 0 {
+			l.loopIndex = ifi.Index
 		}
-		if ifis[i].Flags&net.FlagUp == 0 {
+		if ifi.Flags&net.FlagUp == 0 {
 			continue
 		}
-		if isDevice(l.host, ifis[i]) {
-			l.Interfaces = []net.Interface{ifis[i]}
+		if isDevice(l.host, ifi) {
+			l.Interfaces = []net.Interface{ifi}
 			return
 		}
-		addrs, e := ifis[i].Addrs()
+		addrs, e := ifi.Addrs()
 		if e != nil {
 			// don't give up on a failure from a single interface
 			continue
 		}
+
+		if len(addrs) > 0 {
+			ifacesHasAddr = append(ifacesHasAddr, ifi)
+		}
+
 		for _, addr := range addrs {
 			if cutMask(addr) == l.host {
-				l.Interfaces = []net.Interface{ifis[i]}
+				l.Interfaces = []net.Interface{ifi}
 				return
 			}
 		}
 	}
-	l.Interfaces = ifis
+	l.Interfaces = ifacesHasAddr
 	return
 }
 

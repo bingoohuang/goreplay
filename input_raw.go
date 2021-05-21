@@ -112,6 +112,7 @@ func (i *RAWInput) PluginRead() (*Message, error) {
 		return nil, ErrorStopped
 	case msgTCP = <-i.message:
 		msg.Data = msgTCP.Data()
+		msg.Key = msgTCP.Key
 	}
 	var msgType byte = ResponsePayload
 	if msgTCP.IsRequest {
@@ -136,6 +137,7 @@ func (i *RAWInput) PluginRead() (*Message, error) {
 	}
 	msgTCP.Finalize()
 	msgTCP = nil
+
 	return &msg, nil
 }
 

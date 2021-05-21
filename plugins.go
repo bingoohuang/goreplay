@@ -9,6 +9,7 @@ import (
 type Message struct {
 	Meta []byte // metadata
 	Data []byte // actual data
+	Key  string
 }
 
 // PluginReader is an interface for input plugins
