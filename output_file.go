@@ -79,6 +79,7 @@ func NewFileOutput(pathTemplate string, config *FileOutputConfig) *FileOutput {
 		for {
 			time.Sleep(config.FlushInterval)
 			if o.IsClosed() {
+				fmt.Printf("closed")
 				break
 			}
 			o.updateName()
@@ -256,18 +257,20 @@ func (o *FileOutput) flush() {
 	o.Lock()
 	defer o.Unlock()
 
-	if o.file != nil {
-		if strings.HasSuffix(o.currentName, ".gz") {
-			o.writer.(*gzip.Writer).Flush()
-		} else {
-			o.writer.(*bufio.Writer).Flush()
-		}
+	if o.file == nil {
+		return
+	}
 
-		if stat, err := o.file.Stat(); err == nil {
-			o.chunkSize = int(stat.Size())
-		} else {
-			Debug(0, "[OUTPUT-HTTP] error accessing file size", err)
-		}
+	if strings.HasSuffix(o.currentName, ".gz") {
+		o.writer.(*gzip.Writer).Flush()
+	} else {
+		o.writer.(*bufio.Writer).Flush()
+	}
+
+	if stat, err := o.file.Stat(); err == nil {
+		o.chunkSize = int(stat.Size())
+	} else {
+		Debug(0, "[OUTPUT-HTTP] error accessing file size", err)
 	}
 }
 
@@ -289,7 +292,6 @@ func (o *FileOutput) closeLocked() error {
 		}
 	}
 
-	o.closed = true
 	return nil
 }
 
@@ -297,7 +299,10 @@ func (o *FileOutput) closeLocked() error {
 func (o *FileOutput) Close() error {
 	o.Lock()
 	defer o.Unlock()
-	return o.closeLocked()
+	err := o.closeLocked()
+	o.closed = true
+
+	return err
 }
 
 // IsClosed returns if the output file is closed or not.
