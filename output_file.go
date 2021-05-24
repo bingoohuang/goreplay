@@ -2,11 +2,15 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"compress/gzip"
 	"errors"
 	"fmt"
+	"github.com/buger/goreplay/byteutils"
+	"github.com/buger/goreplay/proto"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -230,7 +234,7 @@ func (o *FileOutput) PluginWrite(msg *Message) (n int, err error) {
 	}
 
 	var nn int
-	n, err = o.writer.Write(msg.Meta)
+	n, err = o.writer.Write(convertMeta(msg))
 	nn, err = o.writer.Write(msg.Data)
 	n += nn
 	nn, err = o.writer.Write(payloadSeparatorAsBytes)
@@ -244,6 +248,24 @@ func (o *FileOutput) PluginWrite(msg *Message) (n int, err error) {
 	}
 
 	return n, err
+}
+
+const layout = `2006-01-02 15:04:05.000000`
+
+func convertMeta(msg *Message) []byte {
+	meta := msg.Meta
+	method, uri, _ := ParseRequestTitle(msg.Data)
+	s := strings.TrimSpace(string(meta))
+
+	// 1 fda9138b7f0000016ac0ad3e 1621835869410250000 0
+	if v := bytes.Fields(meta); len(v) > 2 {
+		if nano, err := strconv.ParseInt(string(v[2]), 10, 64); err == nil {
+			return []byte(fmt.Sprintf("# Timestamp: %s Meta: %s Method: %s, URI: %s\n",
+				time.Unix(0, nano).Format(layout), s, method, uri))
+		}
+	}
+
+	return []byte(fmt.Sprintf("\n# Meta: %s", s))
 }
 
 func (o *FileOutput) flush() {
@@ -310,4 +332,53 @@ func (o *FileOutput) IsClosed() bool {
 	o.Lock()
 	defer o.Unlock()
 	return o.closed
+}
+
+// ParseRequestTitle parses an HTTP/1 request title from payload.
+func ParseRequestTitle(payload []byte) (method, path string, ok bool) {
+	s := byteutils.SliceToString(payload)
+	if len(s) < proto.MinRequestCount {
+		return "", "", false
+	}
+	titleLen := bytes.Index(payload, []byte("\r\n"))
+	if titleLen == -1 {
+		return "", "", false
+	}
+	if strings.Count(s[:titleLen], " ") != 2 {
+		return "", "", false
+	}
+	method = string(Method(payload))
+
+	if !HttpMethods[method] {
+		return method, "", false
+	}
+	pos := strings.Index(s[len(method)+1:], " ")
+	if pos == -1 {
+		return method, "", false
+	}
+	path = s[len(method)+1 : pos]
+	major, minor, ok := http.ParseHTTPVersion(s[pos+len(method)+2 : titleLen])
+	return method, path, ok && major == 1 && (minor == 0 || minor == 1)
+}
+
+// Method returns HTTP method
+func Method(payload []byte) []byte {
+	end := bytes.IndexByte(payload, ' ')
+	if end == -1 {
+		return nil
+	}
+
+	return payload[:end]
+}
+
+var HttpMethods = map[string]bool{
+	http.MethodGet:     true,
+	http.MethodHead:    true,
+	http.MethodPost:    true,
+	http.MethodPut:     true,
+	http.MethodPatch:   true,
+	http.MethodDelete:  true,
+	http.MethodConnect: true,
+	http.MethodOptions: true,
+	http.MethodTrace:   true,
 }
