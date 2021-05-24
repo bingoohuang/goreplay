@@ -347,16 +347,14 @@ func ParseRequestTitle(payload []byte) (method, path string, ok bool) {
 	if strings.Count(s[:titleLen], " ") != 2 {
 		return "", "", false
 	}
-	method = string(Method(payload))
-
-	if !HttpMethods[method] {
+	if method = string(Method(payload)); !HttpMethods[method] {
 		return method, "", false
 	}
 	pos := strings.Index(s[len(method)+1:], " ")
 	if pos == -1 {
 		return method, "", false
 	}
-	path = s[len(method)+1 : pos]
+	path = s[len(method)+1 : len(method)+1+pos]
 	major, minor, ok := http.ParseHTTPVersion(s[pos+len(method)+2 : titleLen])
 	return method, path, ok && major == 1 && (minor == 0 || minor == 1)
 }
