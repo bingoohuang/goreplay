@@ -12,6 +12,7 @@ VERSION = DEV-$(shell date +%s)
 LDFLAGS = -ldflags "-X main.VERSION=$(VERSION)$(PREFIX) -extldflags \"-static\" -X main.DEMO=$(DEMO)"
 MAC_LDFLAGS = -ldflags "-X main.VERSION=$(VERSION)$(PREFIX) -X main.DEMO=$(DEMO)"
 FADDR = ":8000"
+app=$(notdir $(shell pwd))
 
 FPMCOMMON= \
     --name goreplay \
@@ -144,3 +145,9 @@ build_packages:
 	go build -i -o /tmp/gor-build/$(BIN_NAME)
 	fpm $(FPMCOMMON) -a amd64 -t deb ./=/usr/local/bin
 	fpm $(FPMCOMMON) -a amd64 -t rpm ./=/usr/local/bin
+
+
+targz:
+	find . -name ".DS_Store" -delete
+	find . -type f -name '\.*' -print
+	cd .. && rm -f ${app}.tar.gz && tar czvf ${app}.tar.gz --exclude .git --exclude .idea ${app}
